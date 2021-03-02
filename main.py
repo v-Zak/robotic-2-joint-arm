@@ -60,10 +60,13 @@ class position:
         self.y *= dmagnitude 
         
 
-
-height = 400
-width = 400
-base_position = position(50,200)
+#1 pixel = 1mm for calculation purposes
+height = 800
+width = 800
+number_of_segments = 2
+segment_length = 75
+arm = []
+base_position = position(width/8,height/2)
 framerate = 48 #fps
 #timestep in ms based on framerate
 timestep = int(1000*(1/framerate))
@@ -75,30 +78,28 @@ canvas.pack()
 
 initial_a_position = position(100,100)
 mouse_pos = position(0,0)
-segment1 = segment(canvas ,mouse_pos, initial_a_position, 10, 100)
-segment2 = segment(canvas ,segment1.a_position, initial_a_position, 10, 100)
+
+target = mouse_pos
+for i in range(number_of_segments):
+    arm.append(segment(canvas,target, initial_a_position, 10, segment_length))
+    target = arm[i].a_position
 
 def main():   
     mouse_x = root.winfo_pointerx() - root.winfo_rootx() 
     mouse_y = root.winfo_pointery() - root.winfo_rooty()
     mouse_pos = position(mouse_x, mouse_y)
 
-    segment1.target_position = mouse_pos    
-    segment1.update()   
+    target = mouse_pos
+    for segment in arm:
+        segment.target_position = target
+        segment.update()
+        target = segment.a_position
 
-    segment2.target_position = segment1.a_position    
-    segment2.update() 
-
-    distance_to_base = base_position.sub(segment2.a_position)
-
-    segment1.fix_to_base(distance_to_base)
-    segment2.fix_to_base(distance_to_base)  
-
-    segment1.calculate_b()
-    segment2.calculate_b()
-
-    segment1.show()
-    segment2.show()
+    distance_to_base = base_position.sub(arm[-1].a_position)
+    for segment in arm:
+        segment.fix_to_base(distance_to_base)
+        segment.calculate_b()
+        segment.show()
 
     canvas.after(timestep, main)
 
