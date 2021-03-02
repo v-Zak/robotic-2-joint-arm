@@ -63,31 +63,8 @@ class position:
         ans = position(self.x, self.y)
         return ans
         
-
-#1 pixel = 1mm for calculation purposes
-height = 800
-width = 800
-number_of_segments = 2
-segment_length = 75
-arm = []
-base_position = position(width/8,height/2)
-framerate = 48 #fps
-#timestep in ms based on framerate
-timestep = int(1000*(1/framerate))
 pressed = False
 previous_end_pos = None
-
-root = tkinter.Tk()
-root.title("Robot Arm")    
-canvas = tkinter.Canvas(root,bg="black", height=height, width=width)
-
-initial_a_position = position(100,100)
-mouse_pos = position(0,0)
-
-target = mouse_pos
-for i in range(number_of_segments):
-    arm.append(segment(canvas,target, initial_a_position, 10, segment_length))
-    target = arm[i].a_position
 
 def main(): 
     global previous_end_pos
@@ -111,10 +88,24 @@ def main():
 
     if pressed:       
         if previous_end_pos:
-            canvas.create_line(previous_end_pos.x, previous_end_pos.y, end_pos.x, end_pos.y, fill = "red", width = 5)
+            end_lines.append(canvas.create_line(previous_end_pos.x, previous_end_pos.y, end_pos.x, end_pos.y, fill = "red", width = 5))
+            get_servo_rotations()
+            servo_angles_sequence.append(get_servo_rotations())
                  
     previous_end_pos = end_pos.copy()
     canvas.after(timestep, main)
+
+def get_servo_rotations():
+    #convert world angles to relative angles
+    ans = []
+    sum_of_angles_to_base = 0
+    for segment in reversed(arm):
+        angle = math.degrees(segment.angle)
+        ans.append(angle-sum_of_angles_to_base)
+        sum_of_angles_to_base += angle
+    #make arm up = [0,0...]
+    ans[0] += 90
+    return ans
 
 def key_pressed(event):
     global pressed
@@ -125,12 +116,75 @@ def key_released(event):
     global pressed
     pressed = False
 
+def print_servos_sequence():
+    number_of_servos = len(servo_angles_sequence[0])
+    for i in range(number_of_servos):
+        servo_angles = []
+        print(f"Servo {i+1}") 
+        #get angles for specific servo and make array       
+        for element in servo_angles_sequence:
+            servo_angles.append(element[i])
+        #loop over specific turbo and determine min and max
+        min = 360
+        max = -360
+        for angle in servo_angles:
+            if angle < min:
+                min = angle
+            elif angle > max:
+                max = angle
+        print("min:",min,"max:",max)
+    print("The sequence is as follows:")
+    print(servo_angles_sequence)
+    
+    """ for servos in servo_angles_sequence:        
+        min = 360
+        max = -360
+        for angle in servos:
+            if angle < min:
+                min = angle
+            elif angle > max:
+                max = angle
+        print(f"servo {servo_number}")
+        print("min:",min,"max:",max)
+        servo_number += 1
+    print("The sequence is as follows:")
+    print(servo_angles_sequence) """
 
+def reset_servos_sequence():
+    servo_angles_sequence.clear()
+    for line in end_lines:
+        canvas.delete(line)
 
+height = 800
+width = 800
+number_of_segments = 2
+segment_length = 225
+arm = []
+end_lines = []
+servo_angles_sequence = []
+base_position = position(width/8,height/2)
+framerate = 24 #fps
+#timestep in ms based on framerate
+timestep = int(1000*(1/framerate))
 
+root = tkinter.Tk()
+root.title("Robot Arm")    
+canvas = tkinter.Canvas(root,bg="black", height=height, width=width)
+print_sequence_button = tkinter.Button(root, text ="Print Servo Angles", command = print_servos_sequence)
+reset_sequence_button = tkinter.Button(root, text ="Reset Servo Angles", command = reset_servos_sequence)
+
+initial_a_position = position(100,100)
+mouse_pos = position(0,0)
+
+target = mouse_pos
+for i in range(number_of_segments):
+    arm.append(segment(canvas,target, initial_a_position, 10, segment_length))
+    target = arm[i].a_position
 
 canvas.bind("<Button-1>", key_pressed)
 canvas.bind("<ButtonRelease-1>", key_released)
-canvas.pack()
+canvas.pack(side = "top")
+print_sequence_button.pack(side = "left")
+reset_sequence_button.pack(side = "left")
 main()
 root.mainloop()
