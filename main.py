@@ -65,6 +65,7 @@ class position:
         
 pressed = False
 previous_end_pos = None
+check_window = False
 
 def main(): 
     global previous_end_pos
@@ -116,20 +117,36 @@ def key_released(event):
     global pressed
     pressed = False
 
-def save_servos_sequence():  
-    with open("output.txt","a") as w:
-        w.write("Sequence:\n")
-        w.write(str(servo_angles_sequence)+"\n\n")
+def save_servos_sequence_button():  
+    save_servos_sequence(None)
+def save_servos_sequence(event):
+    global check_window
+    if check_window:
+        with open("output.txt","a") as w:
+            for steps in servo_angles_sequence:
+                for angle in steps:
+                    w.write(f"{angle}")
+                w.write("|")
+            w.write("\n")
+
+            
    
 
-def check_servos_sequence(): 
-    check_window = tkinter.Toplevel(root, height = 300, width = 400)
-    check_window.title("Sequence Checker")
-    text = tkinter.Text(check_window)
-    print_button = tkinter.Button(check_window, text ="Save to .txt", command = save_servos_sequence)
-    text.pack(side = "top")
-    print_button.pack(side = "left")
-    
+def check_servos_sequence_button():
+    check_servos_sequence(None)
+def check_servos_sequence(event):
+    global check_window     
+    if not check_window:
+        check_window = tkinter.Toplevel(root, height = 300, width = 400)
+        check_window.title("Sequence Checker")
+        check_window.protocol("WM_DELETE_WINDOW", close_check_window)
+        global text 
+        text = tkinter.Text(check_window)
+        print_button = tkinter.Button(check_window, text ="Save to .txt", command = save_servos_sequence_button)
+        text.pack(side = "top")
+        print_button.pack(side = "left")  
+
+    text.delete(0.0,1000.1000) 
 
     try:
         number_of_servos = len(servo_angles_sequence[0])
@@ -146,21 +163,36 @@ def check_servos_sequence():
                     min = angle
                 elif angle > max:
                     max = angle
+            if min < 0 or max > 180:
+                text.configure(fg = "red")
+            else:
+                text.configure(fg = "black")
             text.insert(str(i*3+1.0),f"SERVO {i+1}\n Min angle:{min}\n Max angle:{max}\n")
        
     except:
         text.insert("1.0","Nothing was drawn.\n Try again!")
 
+def close_check_window():
+    global check_window
+    check_window.destroy()
+    check_window = None
 
-def reset_servos_sequence():
+def reset_servos_sequence_button():
+    reset_servos_sequence(None)
+def reset_servos_sequence(event):
     servo_angles_sequence.clear()
+    try:
+        close_check_window()
+    except:
+        pass
+
     for line in end_lines:
         canvas.delete(line)
 
 height = 400
 width = 400
 number_of_segments = 2
-segment_length = 75
+segment_length = 150
 arm = []
 end_lines = []
 servo_angles_sequence = []
@@ -172,9 +204,9 @@ timestep = int(1000*(1/framerate))
 root = tkinter.Tk()
 root.title("Robot Arm")    
 canvas = tkinter.Canvas(root,bg="black", height=height, width=width)
-view_sequence_button = tkinter.Button(root, text ="Check Sequence is Valid", command = check_servos_sequence)
+view_sequence_button = tkinter.Button(root, text ="Check Sequence is Valid", command = check_servos_sequence_button)
 #print_sequence_button = tkinter.Button(root, text ="See Sequence", command = print_servos_sequence)
-reset_sequence_button = tkinter.Button(root, text ="Reset", command = reset_servos_sequence)
+reset_sequence_button = tkinter.Button(root, text ="Reset", command = reset_servos_sequence_button)
 
 initial_a_position = position(100,100)
 mouse_pos = position(0,0)
@@ -184,6 +216,13 @@ for i in range(number_of_segments):
     arm.append(segment(canvas,target, initial_a_position, 10, segment_length))
     target = arm[i].a_position
 
+def close(event):
+    root.destroy()
+
+root.bind('<Escape>', close)
+root.bind('<c>', check_servos_sequence)
+root.bind('<r>', reset_servos_sequence)
+root.bind('<s>', save_servos_sequence)
 canvas.bind("<Button-1>", key_pressed)
 canvas.bind("<ButtonRelease-1>", key_released)
 canvas.pack(side = "top")
