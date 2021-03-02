@@ -125,8 +125,8 @@ def save_servos_sequence(event):
         with open("output.txt","a") as w:
             for steps in servo_angles_sequence:
                 for angle in steps:
-                    w.write(f"{angle}")
-                w.write("|")
+                    w.write(f"{angle} ")
+                w.write("| ")
             w.write("\n")
 
             
