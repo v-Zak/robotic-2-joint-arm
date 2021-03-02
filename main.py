@@ -58,6 +58,10 @@ class position:
         dmagnitude = new_magnitude/current_magnitude
         self.x *= dmagnitude
         self.y *= dmagnitude 
+
+    def copy(self):
+        ans = position(self.x, self.y)
+        return ans
         
 
 #1 pixel = 1mm for calculation purposes
@@ -70,11 +74,12 @@ base_position = position(width/8,height/2)
 framerate = 48 #fps
 #timestep in ms based on framerate
 timestep = int(1000*(1/framerate))
+pressed = False
+previous_end_pos = None
 
 root = tkinter.Tk()
 root.title("Robot Arm")    
-canvas = tkinter.Canvas(root,bg="black", height=height, width=width)       
-canvas.pack()
+canvas = tkinter.Canvas(root,bg="black", height=height, width=width)
 
 initial_a_position = position(100,100)
 mouse_pos = position(0,0)
@@ -84,7 +89,8 @@ for i in range(number_of_segments):
     arm.append(segment(canvas,target, initial_a_position, 10, segment_length))
     target = arm[i].a_position
 
-def main():   
+def main(): 
+    global previous_end_pos
     mouse_x = root.winfo_pointerx() - root.winfo_rootx() 
     mouse_y = root.winfo_pointery() - root.winfo_rooty()
     mouse_pos = position(mouse_x, mouse_y)
@@ -100,9 +106,31 @@ def main():
         segment.fix_to_base(distance_to_base)
         segment.calculate_b()
         segment.show()
+    
+    end_pos = arm[0].b_position    
 
+    if pressed:       
+        if previous_end_pos:
+            canvas.create_line(previous_end_pos.x, previous_end_pos.y, end_pos.x, end_pos.y, fill = "red", width = 5)
+                 
+    previous_end_pos = end_pos.copy()
     canvas.after(timestep, main)
 
-main()
+def key_pressed(event):
+    global pressed
+    pressed = True
+    
 
+def key_released(event):
+    global pressed
+    pressed = False
+
+
+
+
+
+canvas.bind("<Button-1>", key_pressed)
+canvas.bind("<ButtonRelease-1>", key_released)
+canvas.pack()
+main()
 root.mainloop()
