@@ -116,49 +116,51 @@ def key_released(event):
     global pressed
     pressed = False
 
-def print_servos_sequence():
-    number_of_servos = len(servo_angles_sequence[0])
-    for i in range(number_of_servos):
-        servo_angles = []
-        print(f"Servo {i+1}") 
-        #get angles for specific servo and make array       
-        for element in servo_angles_sequence:
-            servo_angles.append(element[i])
-        #loop over specific turbo and determine min and max
-        min = 360
-        max = -360
-        for angle in servo_angles:
-            if angle < min:
-                min = angle
-            elif angle > max:
-                max = angle
-        print("min:",min,"max:",max)
-    print("The sequence is as follows:")
-    print(servo_angles_sequence)
+def save_servos_sequence():  
+    with open("output.txt","a") as w:
+        w.write("Sequence:\n")
+        w.write(str(servo_angles_sequence)+"\n\n")
+   
+
+def check_servos_sequence(): 
+    check_window = tkinter.Toplevel(root, height = 300, width = 400)
+    check_window.title("Sequence Checker")
+    text = tkinter.Text(check_window)
+    print_button = tkinter.Button(check_window, text ="Save to .txt", command = save_servos_sequence)
+    text.pack(side = "top")
+    print_button.pack(side = "left")
     
-    """ for servos in servo_angles_sequence:        
-        min = 360
-        max = -360
-        for angle in servos:
-            if angle < min:
-                min = angle
-            elif angle > max:
-                max = angle
-        print(f"servo {servo_number}")
-        print("min:",min,"max:",max)
-        servo_number += 1
-    print("The sequence is as follows:")
-    print(servo_angles_sequence) """
+
+    try:
+        number_of_servos = len(servo_angles_sequence[0])
+        for i in range(number_of_servos):
+            servo_angles = []
+            #get angles for specific servo and make array       
+            for element in servo_angles_sequence:
+                servo_angles.append(element[i])
+            #loop over specific servo and determine min and max
+            min = 360
+            max = -360
+            for angle in servo_angles:
+                if angle < min:
+                    min = angle
+                elif angle > max:
+                    max = angle
+            text.insert(str(i*3+1.0),f"SERVO {i+1}\n Min angle:{min}\n Max angle:{max}\n")
+       
+    except:
+        text.insert("1.0","Nothing was drawn.\n Try again!")
+
 
 def reset_servos_sequence():
     servo_angles_sequence.clear()
     for line in end_lines:
         canvas.delete(line)
 
-height = 800
-width = 800
+height = 400
+width = 400
 number_of_segments = 2
-segment_length = 225
+segment_length = 75
 arm = []
 end_lines = []
 servo_angles_sequence = []
@@ -170,8 +172,9 @@ timestep = int(1000*(1/framerate))
 root = tkinter.Tk()
 root.title("Robot Arm")    
 canvas = tkinter.Canvas(root,bg="black", height=height, width=width)
-print_sequence_button = tkinter.Button(root, text ="Print Servo Angles", command = print_servos_sequence)
-reset_sequence_button = tkinter.Button(root, text ="Reset Servo Angles", command = reset_servos_sequence)
+view_sequence_button = tkinter.Button(root, text ="Check Sequence is Valid", command = check_servos_sequence)
+#print_sequence_button = tkinter.Button(root, text ="See Sequence", command = print_servos_sequence)
+reset_sequence_button = tkinter.Button(root, text ="Reset", command = reset_servos_sequence)
 
 initial_a_position = position(100,100)
 mouse_pos = position(0,0)
@@ -184,7 +187,7 @@ for i in range(number_of_segments):
 canvas.bind("<Button-1>", key_pressed)
 canvas.bind("<ButtonRelease-1>", key_released)
 canvas.pack(side = "top")
-print_sequence_button.pack(side = "left")
+view_sequence_button.pack(side = "left")
 reset_sequence_button.pack(side = "left")
 main()
 root.mainloop()
