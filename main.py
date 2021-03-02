@@ -104,7 +104,7 @@ def get_servo_rotations():
         angle = math.degrees(segment.angle)
         ans.append(angle-sum_of_angles_to_base)
         sum_of_angles_to_base += angle
-    #make arm up = [0,0...]
+    #where 0 degrees is for arm 180 = left, 90 = up 270 = right....
     ans[0] += 90
     return ans
 
@@ -193,10 +193,11 @@ height = 400
 width = 400
 number_of_segments = 2
 segment_length = 150
+base_position = position(width/8,height/2)
 arm = []
 end_lines = []
 servo_angles_sequence = []
-base_position = position(width/8,height/2)
+#higher frame rate allows more precise movement of servos
 framerate = 24 #fps
 #timestep in ms based on framerate
 timestep = int(1000*(1/framerate))
