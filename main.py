@@ -105,9 +105,9 @@ def get_servo_rotations():
         ans.append(angle-sum_of_angles_to_base)
         sum_of_angles_to_base += angle
     #where 0 degrees is for arm 180 = left, 90 = up 270 = right....
-    ans[0] += 90
+    ans[0] += 90           
     return ans
-
+    
 def key_pressed(event):
     global pressed
     pressed = True
@@ -125,6 +125,7 @@ def save_servos_sequence(event):
         with open("output.txt","a") as w:
             for steps in servo_angles_sequence:
                 for angle in steps:
+                    angle = (angle-180)*-1 
                     w.write(f"{angle} ")
                 w.write("| ")
             w.write("\n")
